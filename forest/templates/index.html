@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎋 대나무숲</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8f8f6;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #fff;
+    border-bottom: 1px solid #e8e8e4;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { font-size: 18px; font-weight: 500; }
+  header p { font-size: 12px; color: #888; margin-top: 2px; }
+
+  .wrap { max-width: 600px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  .compose {
+    background: #fff;
+    border: 1px solid #e8e8e4;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .compose textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 15px;
+    color: #1a1a1a;
+    font-family: inherit;
+    min-height: 80px;
+    line-height: 1.65;
+    background: transparent;
+  }
+  .compose textarea::placeholder { color: #bbb; }
+  .compose-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0ec;
+  }
+  .compose-footer span { font-size: 12px; color: #aaa; }
+  .btn-post {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-post:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-post:not(:disabled):hover { background: #333; }
+
+  .feed-label {
+    font-size: 11px;
+    color: #aaa;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .post-card {
+    background: #fff;
+    border: 1px solid #e8e8e4;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 10px;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+  .post-meta { font-size: 11px; color: #bbb; margin-bottom: 10px; display: flex; gap: 6px; }
+  .post-content { font-size: 15px; line-height: 1.7; color: #1a1a1a; margin-bottom: 14px; word-break: break-word; }
+
+  .post-actions { display: flex; gap: 8px; }
+  .action-btn {
+    background: none;
+    border: 1px solid #e8e8e4;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #888;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background .1s;
+  }
+  .action-btn:hover { background: #f8f8f6; }
+  .action-btn.liked { color: #e24b4a; border-color: #f5c4c4; }
+
+  .comment-section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f0ec;
+  }
+  .comment {
+    font-size: 13px;
+    color: #555;
+    padding: 6px 0;
+    border-bottom: 1px solid #f5f5f2;
+    line-height: 1.6;
+  }
+  .comment:last-of-type { border-bottom: none; }
+  .comment-meta { font-size: 11px; color: #bbb; margin-bottom: 2px; }
+
+  .comment-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .comment-input-row input {
+    flex: 1;
+    border: 1px solid #e8e8e4;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: #f8f8f6;
+  }
+  .comment-input-row input:focus { border-color: #ccc; background: #fff; }
+  .comment-input-row button {
+    border: 1px solid #e8e8e4;
+    border-radius: 8px;
+    background: none;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    color: #555;
+  }
+  .comment-input-row button:hover { background: #f8f8f6; }
+
+  .empty { text-align: center; padding: 3rem 1rem; color: #bbb; font-size: 14px; }
+  .loading { text-align: center; padding: 2rem; color: #ccc; font-size: 14px; }
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity .2s;
+    pointer-events: none;
+    z-index: 99;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎋 대나무숲</h1>
+  <p>익명으로 자유롭게 털어놓으세요</p>
+</header>
+
+<div class="wrap">
+  <div class="compose">
+    <textarea id="post-input" placeholder="하고 싶은 말을 적어보세요..."></textarea>
+    <div class="compose-footer">
+      <span>🌿 익명으로 게시됩니다</span>
+      <button class="btn-post" id="submit-btn" onclick="submitPost()">올리기</button>
+    </div>
+  </div>
+
+  <div class="feed-label">전체 글</div>
+  <div id="feed"><div class="loading">불러오는 중...</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://forest-production-7d72.up.railway.app/api';
+
+// 좋아요 로컬 저장 (새로고침해도 유지)
+const likedSet = new Set(JSON.parse(localStorage.getItem('liked') || '[]'));
+function saveLiked() { localStorage.setItem('liked', JSON.stringify([...likedSet])); }
+
+function timeSince(dateStr) {
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if (diff < 60) return '방금 전';
+  if (diff < 3600) return Math.floor(diff / 60) + '분 전';
+  if (diff < 86400) return Math.floor(diff / 3600) + '시간 전';
+  return Math.floor(diff / 86400) + '일 전';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+async function loadPosts() {
+  try {
+    const res = await fetch(`${API}/posts/`);
+    const posts = await res.json();
+    renderFeed(posts);
+  } catch {
+    document.getElementById('feed').innerHTML = '<div class="empty">서버에 연결할 수 없어요.</div>';
+  }
+}
+
+function renderFeed(posts) {
+  const feed = document.getElementById('feed');
+  if (!posts.length) {
+    feed.innerHTML = '<div class="empty">첫 번째로 털어놓아 보세요 🌿</div>';
+    return;
+  }
+  feed.innerHTML = posts.map(p => `
+    <div class="post-card" id="post-${p.id}">
+      <div class="post-meta">
+        <span>🌿 익명</span><span>·</span><span>${timeSince(p.created_at)}</span>
+      </div>
+      <div class="post-content">${escHtml(p.content)}</div>
+      <div class="post-actions">
+        <button class="action-btn ${likedSet.has(p.id) ? 'liked' : ''}" onclick="likePost(${p.id}, this)">
+          ♡ ${p.likes}
+        </button>
+        <button class="action-btn" onclick="toggleComments(${p.id}, this)">
+          💬 ${p.comment_count} 댓글
+        </button>
+      </div>
+      <div id="comments-${p.id}" style="display:none">
+        ${renderComments(p)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderComments(p) {
+  const list = p.comments.map(c => `
+    <div class="comment">
+      <div class="comment-meta">🌿 익명 · ${timeSince(c.created_at)}</div>
+      ${escHtml(c.content)}
+    </div>
+  `).join('');
+  return `
+    <div class="comment-section">
+      ${list || '<div style="font-size:13px;color:#ccc;margin-bottom:8px">첫 댓글을 남겨보세요</div>'}
+      <div class="comment-input-row">
+        <input id="ci-${p.id}" type="text" placeholder="댓글 달기..."
+          onkeydown="if(event.key==='Enter') addComment(${p.id})" />
+        <button onclick="addComment(${p.id})">게시</button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleComments(id, btn) {
+  const box = document.getElementById(`comments-${id}`);
+  const hidden = box.style.display === 'none';
+  box.style.display = hidden ? 'block' : 'none';
+  if (hidden) setTimeout(() => document.getElementById(`ci-${id}`)?.focus(), 50);
+}
+
+async function likePost(id, btn) {
+  if (likedSet.has(id)) { showToast('이미 공감했어요'); return; }
+  try {
+    const res = await fetch(`${API}/posts/${id}/like/`, { method: 'POST' });
+    const data = await res.json();
+    likedSet.add(id);
+    saveLiked();
+    btn.classList.add('liked');
+    btn.textContent = `♡ ${data.likes}`;
+  } catch { showToast('오류가 발생했어요'); }
+}
+
+async function addComment(postId) {
+  const input = document.getElementById(`ci-${postId}`);
+  const content = input.value.trim();
+  if (!content) return;
+  input.disabled = true;
+  try {
+    const res = await fetch(`${API}/posts/${postId}/comments/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (!res.ok) throw new Error();
+    input.value = '';
+    await loadPosts();  // 전체 새로고침 (간단하게)
+  } catch { showToast('오류가 발생했어요'); }
+  input.disabled = false;
+}
+
+async function submitPost() {
+  const ta = document.getElementById('post-input');
+  const btn = document.getElementById('submit-btn');
+  const content = ta.value.trim();
+  if (!content) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/posts/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (!res.ok) throw new Error();
+    ta.value = '';
+    showToast('올렸어요 🌿');
+    await loadPosts();
+  } catch { showToast('오류가 발생했어요'); }
+  btn.disabled = false;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+loadPosts();
+</script>
+</body>
+</html>
