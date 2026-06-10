@@ -52,3 +52,6 @@ TEMPLATES = [
         },
     },
 ]
+
+
+CSRF_TRUSTED_ORIGINS = ['https://forest-production-7d72.up.railway.app']
