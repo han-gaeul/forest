@@ -24,16 +24,12 @@ ROOT_URLCONF = 'bamboo.urls'
 WSGI_APPLICATION = 'bamboo.wsgi.application'
 
 import os
+import dj_database_url
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('PGDATABASE'),
-        'USER': os.environ.get('PGUSER'),
-        'PASSWORD': os.environ.get('PGPASSWORD'),
-        'HOST': os.environ.get('PGHOST'),
-        'PORT': os.environ.get('PGPORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL')
+    )
 }
 
 CORS_ALLOW_ALL_ORIGINS = True  # 운영 환경에선 도메인 지정
